@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMTA Management Application</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #1a202c; /* Dark background for sidebar */
+            color: #ffffff;
+            height: 100vh;
+            padding: 1.5rem 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            flex-grow: 1;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .nav-item:hover, .nav-item.active {
+            background-color: #2d3748; /* Darker background on hover/active */
+            color: #4299e1; /* Blue text on hover/active */
+        }
+        .nav-item i {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+        }
+        .section {
+            display: none; /* Hidden by default */
+        }
+        .section.active {
+            display: block; /* Show active section */
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+        .btn-primary {
+            background-color: #4299e1;
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-primary:hover {
+            background-color: #2b6cb0;
+        }
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #2d3748;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #edf2f7;
+        }
+        th {
+            background-color: #edf2f7;
+            font-weight: 600;
+            color: #2d3748;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px; /* Pill shape */
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .tag-new {
+            background-color: #c6f6d5;
+            color: #276749;
+        }
+        .tag-tagged {
+            background-color: #bee3f8;
+            color: #2a4365;
+        }
+        .tag-flagged {
+            background-color: #fed7d7;
+            color: #9b2c2c;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        .status-affirmed { background-color: #38a169; }
+        .status-unaffirmed { background-color: #e53e3e; }
+        .status-pending { background-color: #ecc94b; }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                box-shadow: none;
+                padding: 1rem;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            .nav-item {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 0.5rem;
+            }
+            .nav-item i {
+                margin-right: 0;
+                margin-bottom: 0.25rem;
+            }
+            .sidebar nav {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .sidebar .nav-item {
+                flex: 1 1 auto; /* Allows items to grow and shrink */
+                min-width: 100px; /* Minimum width for each item */
+                margin: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <h1 class="text-2xl font-bold mb-8 text-white text-center">CMTA App</h1>
+            <nav>
+                <div class="nav-item active" data-section="trade-upload">
+                    <i class="fas fa-upload"></i>
+                    <span>1. Trade Upload</span>
+                </div>
+                <div class="nav-item" data-section="trade-tagging">
+                    <i class="fas fa-tags"></i>
+                    <span>2. Trade Tagging</span>
+                </div>
+                <div class="nav-item" data-section="trade-validation">
+                    <i class="fas fa-check-circle"></i>
+                    <span>3. Trade Validation</span>
+                </div>
+                <div class="nav-item" data-section="trade-matching">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>4. Trade Matching</span>
+                </div>
+                <div class="nav-item" data-section="cost-capture">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>5. Cost Capture</span>
+                </div>
+                <div class="nav-item" data-section="cost-reporting">
+                    <i class="fas fa-chart-line"></i>
+                    <span>6. Cost Reporting</span>
+                </div>
+                <div class="nav-item" data-section="exception-management">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>7. Exception & Break Mgt</span>
+                </div>
+                <div class="nav-item" data-section="governance-audit">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>8. Governance & Audit</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- 1. Trade Upload Section -->
+            <section id="trade-upload" class="section active">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">1. Trade Upload</h2>
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Trade Identification</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="form-group">
+                            <label for="tradeId">Trade ID</label>
+                            <input type="text" id="tradeId" placeholder="Enter Trade ID" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="tradeDate">Trade Date</label>
+                            <input type="date" id="tradeDate" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="productType">Product Type</label>
+                            <select id="productType" class="rounded-lg">
+                                <option value="">Select Product Type</option>
+                                <option value="FX">FX</option>
+                                <option value="Equities">Equities</option>
+                                <option value="Bonds">Bonds</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="volumeNotional">Volume/Notional</label>
+                            <input type="number" id="volumeNotional" placeholder="Enter Volume/Notional" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="executingDesk">Executing Desk</label>
+                            <input type="text" id="executingDesk" placeholder="Enter Executing Desk" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="counterparty">Counterparty</label>
+                            <input type="text" id="counterparty" placeholder="Enter Counterparty" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status" class="rounded-lg">
+                                <option value="New">New</option>
+                                <option value="Tagged">Tagged</option>
+                                <option value="Flagged">Flagged</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <button class="btn-primary flex-1">Manual Upload</button>
+                        <button class="btn-secondary flex-1">Fetch from Trade System</button>
+                    </div>
+
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Homepage Search</h3>
+                    <div class="flex flex-col md:flex-row gap-4 mb-6 items-end">
+                        <div class="form-group flex-1">
+                            <label for="searchTradeId">Search by Trade ID</label>
+                            <input type="text" id="searchTradeId" placeholder="Enter Trade ID" class="rounded-lg">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="searchDesk">Desk</label>
+                            <input type="text" id="searchDesk" placeholder="Enter Desk" class="rounded-lg">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="searchDateRange">Date Range</label>
+                            <input type="date" id="searchDateRange" class="rounded-lg">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="searchStatus">Status</label>
+                            <select id="searchStatus" class="rounded-lg">
+                                <option value="">All</option>
+                                <option value="New">New</option>
+                                <option value="Tagged">Tagged</option>
+                                <option value="Flagged">Flagged</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary px-6 py-3 rounded-lg"><i class="fas fa-search mr-2"></i>Search</button>
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <input type="checkbox" id="selectMultipleTrades" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                        <label for="selectMultipleTrades" class="text-gray-700">Select Multiple Trades for Bulk Trading</label>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded"></th>
+                                    <th>Trade ID</th>
+                                    <th>Trade Date</th>
+                                    <th>Product Type</th>
+                                    <th>Volume/Notional</th>
+                                    <th>Executing Desk</th>
+                                    <th>Counterparty</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- Sample Data -->
+                                <tr>
+                                    <td><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded"></td>
+                                    <td>TRD-001</td>
+                                    <td>2024-01-15</td>
+                                    <td>FX</td>
+                                    <td>1,000,000</td>
+                                    <td>Desk A</td>
+                                    <td>Bank XYZ</td>
+                                    <td><span class="tag tag-new">New</span></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded"></td>
+                                    <td>TRD-002</td>
+                                    <td>2024-01-16</td>
+                                    <td>Equities</td>
+                                    <td>50,000</td>
+                                    <td>Desk B</td>
+                                    <td>Brokerage PQR</td>
+                                    <td><span class="tag tag-tagged">Tagged</span></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded"></td>
+                                    <td>TRD-003</td>
+                                    <td>2024-01-17</td>
+                                    <td>Bonds</td>
+                                    <td>2,500,000</td>
+                                    <td>Desk C</td>
+                                    <td>Fund ABC</td>
+                                    <td><span class="tag tag-flagged">Flagged</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Trade Tagging Section -->
+            <section id="trade-tagging" class="section">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">2. Trade Tagging</h2>
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Tagging Options</h3>
+                    <div class="flex flex-col md:flex-row gap-6 mb-6">
+                        <div class="flex-1">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="taggingMethod" value="auto" class="form-radio h-5 w-5 text-blue-600" checked>
+                                <span class="ml-2 text-gray-700">Auto Tagging</span>
+                            </label>
+                            <p class="text-sm text-gray-500 mt-2">Displays what logic was applied.</p>
+                        </div>
+                        <div class="flex-1">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="taggingMethod" value="manual" class="form-radio h-5 w-5 text-blue-600">
+                                <span class="ml-2 text-gray-700">Manual Tagging</span>
+                            </label>
+                            <p class="text-sm text-gray-500 mt-2">Reason for manual tagging.</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Tagging Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="form-group">
+                            <label for="tagProductType">Product Type</label>
+                            <select id="tagProductType" class="rounded-lg">
+                                <option value="">Select Product Type</option>
+                                <option value="FX">FX</option>
+                                <option value="Equities">Equities</option>
+                                <option value="Bonds">Bonds</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tagDesk">Desk</label>
+                            <input type="text" id="tagDesk" placeholder="Enter Desk" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="tagRegion">Region</label>
+                            <input type="text" id="tagRegion" placeholder="Enter Region" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="tagCounterparty">Counterparty</label>
+                            <input type="text" id="tagCounterparty" placeholder="Enter Counterparty" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="tagDatePicker">Date Picker</label>
+                            <input type="date" id="tagDatePicker" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="tagComment">Comment Box</label>
+                            <textarea id="tagComment" rows="3" placeholder="Add comments here..." class="rounded-lg"></textarea>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <button class="btn-secondary flex-1">Editable Tagging Rules (Admin Only)</button>
+                        <button class="btn-secondary flex-1"><i class="fas fa-paperclip mr-2"></i>Attach Supporting Doc</button>
+                    </div>
+                    <button class="btn-primary w-full md:w-auto px-8 py-3 rounded-lg"><i class="fas fa-save mr-2"></i>SAVE</button>
+                </div>
+            </section>
+
+            <!-- 3. Trade Validation Checks Section -->
+            <section id="trade-validation" class="section">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">3. Trade Validation Checks</h2>
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Validation Actions</h3>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <button class="btn-primary flex-1"><i class="fas fa-play-circle mr-2"></i>Validate Button</button>
+                    </div>
+
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Validation Results</h3>
+                    <div class="overflow-x-auto rounded-lg border border-gray-200 mb-6">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th>Trade ID</th>
+                                    <th>Validation Rule</th>
+                                    <th>Result</th>
+                                    <th>Message</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- Sample Data -->
+                                <tr>
+                                    <td>TRD-001</td>
+                                    <td>Price Variance</td>
+                                    <td><span class="text-red-600 font-semibold">Error</span></td>
+                                    <td>Price variance exceeds tolerance.</td>
+                                    <td><button class="text-blue-600 hover:underline">View Details</button></td>
+                                </tr>
+                                <tr>
+                                    <td>TRD-002</td>
+                                    <td>Missing Counterparty</td>
+                                    <td><span class="text-yellow-600 font-semibold">Warning</span></td>
+                                    <td>Counterparty information is incomplete.</td>
+                                    <td><button class="text-blue-600 hover:underline">Edit</button></td>
+                                </tr>
+                                <tr>
+                                    <td>TRD-003</td>
+                                    <td>Product Type Mismatch</td>
+                                    <td><span class="text-red-600 font-semibold">Error</span></td>
+                                    <td>Product type does not match.</td>
+                                    <td><button class="text-blue-600 hover:underline">Review</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Actions on Selected Trades</h3>
+                    <div class="flex flex-wrap gap-4">
+                        <button class="btn-secondary"><i class="fas fa-eye mr-2"></i>Review Selected Trade</button>
+                        <button class="btn-primary"><i class="fas fa-check-circle mr-2"></i>Confirm Tagging</button>
+                        <button class="btn-secondary bg-red-500 text-white hover:bg-red-600"><i class="fas fa-times-circle mr-2"></i>Reject Tag / Send to Exception</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. Trade Matching Section -->
+            <section id="trade-matching" class="section">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">4. Trade Matching</h2>
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Matching Operations</h3>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <button class="btn-primary flex-1"><i class="fas fa-sync-alt mr-2"></i>Run Matching</button>
+                        <button class="btn-secondary flex-1"><i class="fas fa-cogs mr-2"></i>View Matching Rules</button>
+                    </div>
+
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Matching Status</h3>
+                    <div class="flex flex-wrap gap-4 mb-6 items-center">
+                        <div class="flex items-center text-gray-700">
+                            <span class="status-indicator status-affirmed"></span> Affirmed
+                        </div>
+                        <div class="flex items-center text-gray-700">
+                            <span class="status-indicator status-unaffirmed"></span> Unaffirmed
+                        </div>
+                        <div class="flex items-center text-gray-700">
+                            <span class="status-indicator status-pending"></span> Pending
+                        </div>
+                        <div class="form-group flex-1 min-w-[200px]">
+                            <label for="matchAffirmationState" class="sr-only">Affirmation States</label>
+                            <select id="matchAffirmationState" class="rounded-lg">
+                                <option value="">All Affirmation States</option>
+                                <option value="Affirmed">Affirmed</option>
+                                <option value="Unaffirmed">Unaffirmed</option>
+                                <option value="Pending">Pending</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-1 min-w-[200px]">
+                            <label for="matchCounterparty" class="sr-only">Counterparty Filter</label>
+                            <input type="text" id="matchCounterparty" placeholder="Filter by Counterparty" class="rounded-lg">
+                        </div>
+                        <div class="form-group flex-1 min-w-[200px]">
+                            <label for="matchProduct" class="sr-only">Product Filter</label>
+                            <input type="text" id="matchProduct" placeholder="Filter by Product" class="rounded-lg">
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-lg border border-gray-200 mb-6">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded"></th>
+                                    <th>Internal Trade ID</th>
+                                    <th>External Ref. ID</th>
+                                    <th>Match Status</th>
+                                    <th>Trade Date</th>
+                                    <th>Volume</th>
+                                    <th>Counterparty</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- Sample Data -->
+                                <tr>
+                                    <td><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded"></td>
+                                    <td>INT-001</td>
+                                    <td>EXT-ABC</td>
+                                    <td><span class="text-green-600 font-semibold">Matched</span></td>
+                                    <td>2024-01-15</td>
+                                    <td>1,000,000</td>
+                                    <td>Bank XYZ</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded"></td>
+                                    <td>INT-002</td>
+                                    <td>EXT-DEF</td>
+                                    <td><span class="text-red-600 font-semibold">Unmatched</span></td>
+                                    <td>2024-01-16</td>
+                                    <td>50,000</td>
+                                    <td>Brokerage PQR</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded"></td>
+                                    <td>INT-003</td>
+                                    <td>EXT-GHI</td>
+                                    <td><span class="text-yellow-600 font-semibold">Partial</span></td>
+                                    <td>2024-01-17</td>
+                                    <td>2,500,000</td>
+                                    <td>Fund ABC</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 mb-4 items-center">
+                        <input type="checkbox" id="selectForcedMatching" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                        <label for="selectForcedMatching" class="text-gray-700">Select Trade for Forced Matching or Bulk Action</label>
+                        <button class="btn-secondary"><i class="fas fa-bell mr-2"></i>Alert Toggle for unaffirmed trades after T+1</button>
+                    </div>
+                    <div class="flex flex-wrap gap-4">
+                        <button class="btn-secondary"><i class="fas fa-flag mr-2"></i>Mark for Review</button>
+                        <button class="btn-secondary bg-red-500 text-white hover:bg-red-600"><i class="fas fa-sign-out-alt mr-2"></i>Send to Exception Queue</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Cost Capture Section -->
+            <section id="cost-capture" class="section">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">5. Cost Capture</h2>
+                <div class="card mb-8">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Fee Mapping</h3>
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <button class="btn-secondary"><i class="fas fa-edit mr-2"></i>Edit Fee Mapping</button>
+                        <button class="btn-primary"><i class="fas fa-plus-circle mr-2"></i>Add New Rate</button>
+                    </div>
+                    <div class="overflow-x-auto rounded-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th>Counter Party</th>
+                                    <th>Product</th>
+                                    <th>Fee Type</th>
+                                    <th>Rate</th>
+                                    <th>Region</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- Sample Data -->
+                                <tr>
+                                    <td>Bank XYZ</td>
+                                    <td>FX</td>
+                                    <td>Execution Fee</td>
+                                    <td>0.01%</td>
+                                    <td>EMEA</td>
+                                </tr>
+                                <tr>
+                                    <td>Brokerage PQR</td>
+                                    <td>Equities</td>
+                                    <td>Commission</td>
+                                    <td>$50/trade</td>
+                                    <td>AMER</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Cost Estimation</h3>
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="costBasis" value="notional" class="form-radio h-5 w-5 text-blue-600" checked>
+                            <span class="ml-2 text-gray-700">Per Notional</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="costBasis" value="trade" class="form-radio h-5 w-5 text-blue-600">
+                            <span class="ml-2 text-gray-700">Per Trade</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="costBasis" value="ticket" class="form-radio h-5 w-5 text-blue-600">
+                            <span class="ml-2 text-gray-700">Per Ticket</span>
+                        </label>
+                    </div>
+                    <div class="overflow-x-auto rounded-lg border border-gray-200 mb-6">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th>Trade ID</th>
+                                    <th>Volume Expected</th>
+                                    <th>Fee Rate</th>
+                                    <th>Fee Basis</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- Sample Data -->
+                                <tr>
+                                    <td>TRD-001</td>
+                                    <td>1,000,000</td>
+                                    <td>0.01%</td>
+                                    <td>Notional</td>
+                                </tr>
+                                <tr>
+                                    <td>TRD-002</td>
+                                    <td>50,000</td>
+                                    <td>$50</td>
+                                    <td>Trade</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn-primary w-full md:w-auto px-8 py-3 rounded-lg"><i class="fas fa-calculator mr-2"></i>Recalculate Cost</button>
+                </div>
+            </section>
+
+            <!-- 6. Cost Reporting Section -->
+            <section id="cost-reporting" class="section">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">6. Cost Reporting</h2>
+                <div class="card mb-8">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Cost Summary Dashboard</h3>
+                    <div class="form-group mb-4">
+                        <label for="reportDatePicker">Date Picker</label>
+                        <input type="date" id="reportDatePicker" class="rounded-lg">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="p-4 bg-blue-50 rounded-lg shadow-sm">
+                            <p class="text-sm text-gray-500">Total Gearing (Today)</p>
+                            <p class="text-2xl font-bold text-blue-800">$15,000</p>
+                        </div>
+                        <div class="p-4 bg-green-50 rounded-lg shadow-sm">
+                            <p class="text-sm text-gray-500">Total Gearing (Weekly)</p>
+                            <p class="text-2xl font-bold text-green-800">$75,000</p>
+                        </div>
+                        <div class="p-4 bg-purple-50 rounded-lg shadow-sm">
+                            <p class="text-sm text-gray-500">Total Gearing (Monthly)</p>
+                            <p class="text-2xl font-bold text-purple-800">$300,000</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <div class="p-4 bg-yellow-50 rounded-lg shadow-sm">
+                            <p class="text-sm text-gray-500">Cost By Desk</p>
+                            <p class="text-xl font-bold text-yellow-800">Desk A: $50K</p>
+                        </div>
+                        <div class="p-4 bg-red-50 rounded-lg shadow-sm">
+                            <p class="text-sm text-gray-500">Cost By Product</p>
+                            <p class="text-xl font-bold text-red-800">FX: $120K</p>
+                        </div>
+                        <div class="p-4 bg-indigo-50 rounded-lg shadow-sm">
+                            <p class="text-sm text-gray-500">Cost By Region</p>
+                            <p class="text-xl font-bold text-indigo-800">EMEA: $80K</p>
+                        </div>
+                    </div>
+                    <h4 class="text-xl font-semibold mb-3 text-gray-700">Top 5 Costly Counterparties</h4>
+                    <ul class="list-disc list-inside text-gray-700">
+                        <li>Counterparty X: $10,000</li>
+                        <li>Counterparty Y: $8,000</li>
+                        <li>Counterparty Z: $7,500</li>
+                        <li>Counterparty A: $6,000</li>
+                        <li>Counterparty B: $5,500</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Report Builder</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="form-group">
+                            <label for="reportDesk">Desk (Dimension)</label>
+                            <select id="reportDesk" class="rounded-lg">
+                                <option value="">Select Desk</option>
+                                <option value="Desk A">Desk A</option>
+                                <option value="Desk B">Desk B</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="reportProduct">Product (Dimension)</label>
+                            <select id="reportProduct" class="rounded-lg">
+                                <option value="">Select Product</option>
+                                <option value="FX">FX</option>
+                                <option value="Equities">Equities</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="reportCounterparty">Counterparty (Dimension)</label>
+                            <select id="reportCounterparty" class="rounded-lg">
+                                <option value="">Select Counterparty</option>
+                                <option value="Bank XYZ">Bank XYZ</option>
+                                <option value="Brokerage PQR">Brokerage PQR</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="reportMonth">Month (Dimension)</label>
+                            <input type="month" id="reportMonth" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="reportMetric">Metric</label>
+                            <select id="reportMetric" class="rounded-lg">
+                                <option value="">Select Metric</option>
+                                <option value="Total Cost">Total Cost</option>
+                                <option value="Average Rate">Average Rate</option>
+                                <option value="Volume">Volume</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <button class="btn-primary flex-1"><i class="fas fa-download mr-2"></i>Download Report</button>
+                        <button class="btn-secondary flex-1"><i class="fas fa-save mr-2"></i>Save Report View</button>
+                    </div>
+
+                    <h4 class="text-xl font-semibold mb-3 text-gray-700">Filters</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="form-group">
+                            <label for="filterDesk">Desk</label>
+                            <input type="text" id="filterDesk" placeholder="Filter by Desk" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="filterBreakType">Break Type</label>
+                            <input type="text" id="filterBreakType" placeholder="Filter by Break Type" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="filterAgingBucket">Aging Bucket</label>
+                            <input type="text" id="filterAgingBucket" placeholder="Filter by Aging Bucket" class="rounded-lg">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. Exception & Break Management Section -->
+            <section id="exception-management" class="section">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">7. Exception & Break Management</h2>
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Break Queue Dashboard</h3>
+                    <div class="overflow-x-auto rounded-lg border border-gray-200 mb-6">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th>Trade ID</th>
+                                    <th>Break Reason</th>
+                                    <th>Owner</th>
+                                    <th>Age</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- Sample Data -->
+                                <tr>
+                                    <td>TRD-004</td>
+                                    <td>Price Mismatch</td>
+                                    <td>John Doe</td>
+                                    <td>2 days</td>
+                                    <td><span class="text-red-600 font-semibold">Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td>TRD-005</td>
+                                    <td>Volume Discrepancy</td>
+                                    <td>Jane Smith</td>
+                                    <td>5 days</td>
+                                    <td><span class="text-yellow-600 font-semibold">In Progress</span></td>
+                                </tr>
+                                <tr>
+                                    <td>TRD-006</td>
+                                    <td>Counterparty Error</td>
+                                    <td>Admin User</td>
+                                    <td>10 days</td>
+                                    <td><span class="text-red-800 font-semibold">Escalated</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6 items-center">
+                        <div class="form-group flex-1 w-full">
+                            <label for="exceptionStatus" class="sr-only">Exception Status</label>
+                            <select id="exceptionStatus" class="rounded-lg">
+                                <option value="">Filter by Status</option>
+                                <option value="Open">Open</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Escalated">Escalated</option>
+                                <option value="Resolved">Resolved</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="selectMultipleBreaks" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                            <label for="selectMultipleBreaks" class="text-gray-700">Select Multiple Breaks</label>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-4">
+                        <button class="btn-primary"><i class="fas fa-user-plus mr-2"></i>Assign Owner</button>
+                        <button class="btn-secondary bg-yellow-500 text-white hover:bg-yellow-600"><i class="fas fa-bell mr-2"></i>SLA Reminder</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. Governance and Audit Support Section -->
+            <section id="governance-audit" class="section">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">8. Governance and Audit Support</h2>
+                <div class="card mb-8">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Audit Trail Viewer</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div class="form-group">
+                            <label for="auditUser">User</label>
+                            <input type="text" id="auditUser" placeholder="Filter by User" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="auditDateRange">Date Range</label>
+                            <input type="date" id="auditDateRange" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="auditActionType">Action Type</label>
+                            <input type="text" id="auditActionType" placeholder="Filter by Action Type" class="rounded-lg">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto rounded-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Module Performed</th>
+                                    <th>Timestamp</th>
+                                    <th>Old Value</th>
+                                    <th>New Value</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- Sample Data -->
+                                <tr>
+                                    <td>Update</td>
+                                    <td>Trade Tagging</td>
+                                    <td>2024-01-18 10:30:00</td>
+                                    <td>Status: New</td>
+                                    <td>Status: Tagged</td>
+                                </tr>
+                                <tr>
+                                    <td>Create</td>
+                                    <td>Cost Capture</td>
+                                    <td>2024-01-18 11:00:00</td>
+                                    <td>-</td>
+                                    <td>Fee Rule: FX, 0.01%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Role Based Access Management</h3>
+                    <div class="form-group mb-4">
+                        <label for="roleDropdown">Select Role</label>
+                        <select id="roleDropdown" class="rounded-lg">
+                            <option value="Admin">Admin</option>
+                            <option value="Analyst">Analyst</option>
+                            <option value="Reviewer">Reviewer</option>
+                            <option value="Compliance">Compliance</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <button class="btn-primary"><i class="fas fa-plus-circle mr-2"></i>Create</button>
+                        <button class="btn-secondary"><i class="fas fa-edit mr-2"></i>Edit</button>
+                        <button class="btn-secondary bg-red-500 text-white hover:bg-red-600"><i class="fas fa-trash-alt mr-2"></i>Delete</button>
+                        <button class="btn-secondary"><i class="fas fa-eye mr-2"></i>View</button>
+                    </div>
+                    <div class="flex flex-wrap gap-4">
+                        <button class="btn-secondary"><i class="fas fa-clipboard-list mr-2"></i>Request Change</button>
+                        <button class="btn-primary"><i class="fas fa-paper-plane mr-2"></i>Submit for Approval</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navItems = document.querySelectorAll('.nav-item');
+            const sections = document.querySelectorAll('.section');
+
+            // Function to show a specific section
+            const showSection = (sectionId) => {
+                sections.forEach(section => {
+                    section.classList.remove('active');
+                });
+                const activeSection = document.getElementById(sectionId);
+                if (activeSection) {
+                    activeSection.classList.add('active');
+                }
+            };
+
+            // Function to set active navigation item
+            const setActiveNavItem = (targetSectionId) => {
+                navItems.forEach(item => {
+                    if (item.dataset.section === targetSectionId) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+            };
+
+            // Event listener for navigation items
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const sectionId = item.dataset.section;
+                    showSection(sectionId);
+                    setActiveNavItem(sectionId);
+                });
+            });
+
+            // Initially show the first section (Trade Upload)
+            showSection('trade-upload');
+            setActiveNavItem('trade-upload');
+        });
+    </script>
+</body>
+</html>

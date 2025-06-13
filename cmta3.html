@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMTA Management Application</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #1a202c; /* Dark background for sidebar */
+            color: #ffffff;
+            height: 100vh;
+            padding: 1.5rem 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            transition: width 0.3s ease;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            flex-grow: 1;
+            transition: margin-left 0.3s ease;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .nav-item:hover, .nav-item.active {
+            background-color: #2d3748; /* Darker background on hover/active */
+            color: #4299e1; /* Blue text on hover/active */
+        }
+        .nav-item i {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+        }
+        .section {
+            display: none; /* Hidden by default */
+        }
+        .section.active {
+            display: block; /* Show active section */
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        .btn-primary {
+            background-color: #4299e1;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #2b6cb0;
+        }
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #2d3748;
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #edf2f7;
+        }
+        th {
+            background-color: #edf2f7;
+            font-weight: 600;
+            color: #2d3748;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px; /* Pill shape */
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .tag-new { background-color: #c6f6d5; color: #276749; }
+        .tag-tagged { background-color: #bee3f8; color: #2a4365; }
+        .tag-flagged { background-color: #fed7d7; color: #9b2c2c; }
+        .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.5rem; }
+        .status-affirmed { background-color: #38a169; }
+        .status-unaffirmed { background-color: #e53e3e; }
+        .status-pending { background-color: #ecc94b; }
+
+        /* Custom Toast/Modal for notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #2d3748;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.success { background-color: #38a169; }
+        .toast.error { background-color: #e53e3e; }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                box-shadow: none;
+                padding: 1rem;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            .sidebar nav {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .sidebar .nav-item {
+                flex-direction: column;
+                flex: 1 1 auto;
+                min-width: 100px;
+                margin: 0.25rem;
+            }
+            .nav-item i { margin-right: 0; margin-bottom: 0.25rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container" class="flex flex-col lg:flex-row min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <h1 class="text-2xl font-bold mb-8 text-white text-center">CMTA App</h1>
+            <nav>
+                <div class="nav-item active" data-section="trade-upload"><i class="fas fa-upload"></i><span>1. Trade Upload</span></div>
+                <div class="nav-item" data-section="trade-tagging"><i class="fas fa-tags"></i><span>2. Trade Tagging</span></div>
+                <div class="nav-item" data-section="trade-validation"><i class="fas fa-check-circle"></i><span>3. Trade Validation</span></div>
+                <div class="nav-item" data-section="trade-matching"><i class="fas fa-exchange-alt"></i><span>4. Trade Matching</span></div>
+                <div class="nav-item" data-section="cost-capture"><i class="fas fa-dollar-sign"></i><span>5. Cost Capture</span></div>
+                <div class="nav-item" data-section="cost-reporting"><i class="fas fa-chart-line"></i><span>6. Cost Reporting</span></div>
+                <div class="nav-item" data-section="exception-management"><i class="fas fa-exclamation-triangle"></i><span>7. Exception Mgt</span></div>
+                <div class="nav-item" data-section="governance-audit"><i class="fas fa-shield-alt"></i><span>8. Governance</span></div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- 1. Trade Upload Section -->
+            <section id="trade-upload" class="section active">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">1. Trade Upload</h2>
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Trade Identification</h3>
+                    <form id="trade-upload-form">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                            <div class="form-group"><label for="tradeId">Trade ID</label><input type="text" id="tradeId" placeholder="e.g., TRD-004" required></div>
+                            <div class="form-group"><label for="tradeDate">Trade Date</label><input type="date" id="tradeDate" required></div>
+                            <div class="form-group"><label for="productType">Product Type</label><select id="productType" required><option value="">Select Product</option><option value="FX">FX</option><option value="Equities">Equities</option><option value="Bonds">Bonds</option></select></div>
+                            <div class="form-group"><label for="volumeNotional">Volume/Notional</label><input type="number" id="volumeNotional" placeholder="e.g., 1500000" required></div>
+                            <div class="form-group"><label for="executingDesk">Executing Desk</label><input type="text" id="executingDesk" placeholder="e.g., Desk A" required></div>
+                            <div class="form-group"><label for="counterparty">Counterparty</label><input type="text" id="counterparty" placeholder="e.g., Bank XYZ" required></div>
+                            <div class="form-group"><label for="status">Status</label><select id="status" required><option value="new">New</option><option value="tagged">Tagged</option><option value="flagged">Flagged</option></select></div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                            <button type="submit" class="btn btn-primary flex-1"><i class="fas fa-upload"></i>Manual Upload</button>
+                            <button type="button" class="btn btn-secondary flex-1" onclick="showToast('This feature is not yet implemented.', 'info')"><i class="fas fa-robot"></i>Fetch from Trade System</button>
+                        </div>
+                    </form>
+
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Homepage Search</h3>
+                    <form id="trade-search-form" class="flex flex-col md:flex-row gap-4 mb-6 items-end">
+                        <div class="form-group flex-1"><label for="searchTradeId">Trade ID</label><input type="text" id="searchTradeId" placeholder="Search by ID"></div>
+                        <div class="form-group flex-1"><label for="searchDesk">Desk</label><input type="text" id="searchDesk" placeholder="Search by Desk"></div>
+                        <div class="form-group flex-1"><label for="searchDate">Date</label><input type="date" id="searchDate"></div>
+                        <div class="form-group flex-1"><label for="searchStatus">Status</label><select id="searchStatus"><option value="">All</option><option value="new">New</option><option value="tagged">Tagged</option><option value="flagged">Flagged</option></select></div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i>Search</button>
+                         <button type="reset" id="reset-search-btn" class="btn btn-secondary"><i class="fas fa-undo"></i>Reset</button>
+                    </form>
+
+                    <div class="overflow-x-auto rounded-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead><tr><th>Trade ID</th><th>Trade Date</th><th>Product</th><th>Volume/Notional</th><th>Desk</th><th>Counterparty</th><th>Status</th></tr></thead>
+                            <tbody id="trade-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Dynamic data will be injected here by Firebase -->
+                                <tr><td colspan="7" class="text-center py-8">Loading trade data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Other sections remain the same for brevity but would be similarly integrated -->
+             <!-- 5. Cost Capture Section -->
+            <section id="cost-capture" class="section">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">5. Cost Capture</h2>
+                <div class="card mb-8">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Fee Mapping</h3>
+                     <form id="fee-rule-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-end">
+                        <div class="form-group"><label for="feeCounterparty">Counter Party</label><input type="text" id="feeCounterparty" placeholder="e.g., Bank XYZ" required></div>
+                        <div class="form-group"><label for="feeProduct">Product</label><select id="feeProduct" required><option value="">Select Product</option><option value="FX">FX</option><option value="Equities">Equities</option><option value="Bonds">Bonds</option></select></div>
+                        <div class="form-group"><label for="feeRate">Rate</label><input type="number" step="0.0001" id="feeRate" placeholder="e.g., 0.01" required></div>
+                        <div class="form-group"><label for="feeBasis">Fee Basis</label><select id="feeBasis" required><option value="notional_percent">Notional (%)</option><option value="per_trade_fixed">Per Trade (fixed)</option></select></div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-plus-circle"></i>Add New Rate</button>
+                    </form>
+                    <div class="overflow-x-auto rounded-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead><tr><th>Counter Party</th><th>Product</th><th>Rate</th><th>Fee Basis</th><th>Action</th></tr></thead>
+                            <tbody id="fee-rules-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="5" class="text-center py-4">Loading fee rules...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">Cost Estimation</h3>
+                    <div class="flex items-center gap-4 mb-6">
+                        <button id="recalculate-cost-btn" class="btn btn-primary"><i class="fas fa-calculator"></i>Recalculate Cost</button>
+                        <p id="calculation-status" class="text-gray-500"></p>
+                    </div>
+                    <div class="overflow-x-auto rounded-lg border border-gray-200 mb-6">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead><tr><th>Trade ID</th><th>Volume</th><th>Applicable Rate</th><th>Fee Basis</th><th>Estimated Cost</th></tr></thead>
+                            <tbody id="cost-estimation-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="5" class="text-center py-8">Click "Recalculate Cost" to see estimations.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Stubs for other sections -->
+            <section id="trade-tagging" class="section"><h2 class="text-3xl font-bold">2. Trade Tagging (UI Only)</h2></section>
+            <section id="trade-validation" class="section"><h2 class="text-3xl font-bold">3. Trade Validation (UI Only)</h2></section>
+            <section id="trade-matching" class="section"><h2 class="text-3xl font-bold">4. Trade Matching (UI Only)</h2></section>
+            <section id="cost-reporting" class="section"><h2 class="text-3xl font-bold">6. Cost Reporting (UI Only)</h2></section>
+            <section id="exception-management" class="section"><h2 class="text-3xl font-bold">7. Exception Management (UI Only)</h2></section>
+            <section id="governance-audit" class="section"><h2 class="text-3xl font-bold">8. Governance & Audit (UI Only)</h2></section>
+        </main>
+    </div>
+
+    <!-- Toast Notification Element -->
+    <div id="toast-notification" class="toast"></div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel, collection, addDoc, onSnapshot, query, where, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- UTILITY FUNCTIONS ---
+        
+        /**
+         * Shows a toast notification message.
+         * @param {string} message - The message to display.
+         * @param {string} type - 'success', 'error', or 'info'.
+         */
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast-notification');
+            toast.textContent = message;
+            toast.className = 'toast show'; // Reset classes
+            if (type === 'success') toast.classList.add('success');
+            if (type === 'error') toast.classList.add('error');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        window.showToast = showToast; // Make it globally accessible if needed for inline onclick
+
+        // --- FIREBASE SETUP ---
+        
+        // These global variables are expected to be provided by the hosting environment.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cmta-app-default';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "DEMO_ONLY", authDomain: "DEMO_ONLY", projectId: "DEMO_ONLY" };
+        
+        let app, auth, db, userId, tradesCollectionRef, feeRulesCollectionRef;
+
+        /**
+         * Initializes Firebase and sets up authentication and Firestore references.
+         */
+        async function initializeFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setLogLevel('debug'); // For detailed console logs
+
+                // Listen for authentication state changes
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        console.log("User is signed in with UID:", user.uid);
+                        userId = user.uid;
+
+                        // Setup Firestore collection references once user is authenticated
+                        tradesCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'trades');
+                        feeRulesCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'feeRules');
+                        
+                        // Start listening for data changes
+                        listenForTrades();
+                        listenForFeeRules();
+                    } else {
+                        console.log("User is not signed in. Attempting to sign in...");
+                        await authenticateUser();
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+                showToast("Could not connect to the database.", "error");
+            }
+        }
+        
+        /**
+         * Authenticates the user using a custom token or signs in anonymously as a fallback.
+         */
+        async function authenticateUser() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication Error:", error);
+                showToast("Authentication failed.", "error");
+            }
+        }
+        
+        // --- TRADE MANAGEMENT ---
+
+        const tradeTableBody = document.getElementById('trade-table-body');
+
+        /**
+         * Renders the trades data into the trade table.
+         * @param {Array} trades - An array of trade objects from Firestore.
+         */
+        function renderTrades(trades) {
+            tradeTableBody.innerHTML = ''; // Clear existing table data
+            if (trades.length === 0) {
+                tradeTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8">No trades found. Please add a new trade.</td></tr>`;
+                return;
+            }
+
+            trades.forEach(trade => {
+                const tr = document.createElement('tr');
+                const volume = parseFloat(trade.volumeNotional).toLocaleString();
+                tr.innerHTML = `
+                    <td>${trade.tradeId}</td>
+                    <td>${trade.tradeDate}</td>
+                    <td>${trade.productType}</td>
+                    <td>${volume}</td>
+                    <td>${trade.executingDesk}</td>
+                    <td>${trade.counterparty}</td>
+                    <td><span class="tag tag-${trade.status}">${trade.status}</span></td>
+                `;
+                tradeTableBody.appendChild(tr);
+            });
+        }
+
+        /**
+         * Sets up a real-time listener for the trades collection.
+         */
+        function listenForTrades() {
+            if (!tradesCollectionRef) return;
+            onSnapshot(query(tradesCollectionRef), (snapshot) => {
+                const trades = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTrades(trades);
+            }, (error) => {
+                console.error("Error listening for trades:", error);
+                showToast("Failed to load trades.", "error");
+            });
+        }
+        
+        /**
+         * Handles the submission of the trade upload form.
+         * @param {Event} e - The form submission event.
+         */
+        async function handleTradeUpload(e) {
+            e.preventDefault();
+            const form = e.target;
+            const tradeData = {
+                tradeId: form.tradeId.value,
+                tradeDate: form.tradeDate.value,
+                productType: form.productType.value,
+                volumeNotional: Number(form.volumeNotional.value),
+                executingDesk: form.executingDesk.value,
+                counterparty: form.counterparty.value,
+                status: form.status.value,
+            };
+
+            try {
+                await addDoc(tradesCollectionRef, tradeData);
+                showToast('Trade uploaded successfully!', 'success');
+                form.reset();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                showToast('Failed to upload trade.', 'error');
+            }
+        }
+        
+        /**
+         * Handles the submission of the trade search form.
+         * @param {Event} e - The form submission event.
+         */
+        async function handleTradeSearch(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            // Build the query based on form inputs
+            let queries = [];
+            if (form.searchTradeId.value) queries.push(where("tradeId", "==", form.searchTradeId.value));
+            if (form.searchDesk.value) queries.push(where("executingDesk", "==", form.searchDesk.value));
+            if (form.searchDate.value) queries.push(where("tradeDate", "==", form.searchDate.value));
+            if (form.searchStatus.value) queries.push(where("status", "==", form.searchStatus.value));
+
+            const finalQuery = query(tradesCollectionRef, ...queries);
+
+            try {
+                const querySnapshot = await getDocs(finalQuery);
+                const trades = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTrades(trades);
+                showToast(`Found ${trades.length} matching trades.`, 'info');
+            } catch (error) {
+                console.error("Error searching trades: ", error);
+                showToast('An error occurred during search.', 'error');
+            }
+        }
+        
+        // --- COST & FEE MANAGEMENT ---
+
+        const feeRulesTableBody = document.getElementById('fee-rules-table-body');
+        const costEstimationTableBody = document.getElementById('cost-estimation-table-body');
+        let currentFeeRules = []; // Cache for calculations
+
+        /**
+         * Renders fee rules into the fee mapping table.
+         * @param {Array} rules - Array of fee rule objects.
+         */
+        function renderFeeRules(rules) {
+            feeRulesTableBody.innerHTML = '';
+            if (rules.length === 0) {
+                feeRulesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">No fee rules defined.</td></tr>`;
+                return;
+            }
+            rules.forEach(rule => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${rule.counterparty}</td>
+                    <td>${rule.product}</td>
+                    <td>${rule.rate} ${rule.basis === 'notional_percent' ? '%' : '$'}</td>
+                    <td>${rule.basis.replace('_', ' ')}</td>
+                    <td><button data-id="${rule.id}" class="text-red-500 hover:underline delete-fee-btn">Delete</button></td>
+                `;
+                feeRulesTableBody.appendChild(tr);
+            });
+        }
+
+        /**
+         * Sets up a real-time listener for the fee rules collection.
+         */
+        function listenForFeeRules() {
+            if (!feeRulesCollectionRef) return;
+            onSnapshot(query(feeRulesCollectionRef), (snapshot) => {
+                currentFeeRules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderFeeRules(currentFeeRules);
+            }, (error) => {
+                console.error("Error listening for fee rules:", error);
+                showToast("Failed to load fee rules.", 'error');
+            });
+        }
+
+        /**
+         * Handles adding a new fee rule.
+         * @param {Event} e - The form submission event.
+         */
+        async function handleAddFeeRule(e) {
+            e.preventDefault();
+            const form = e.target;
+            const feeRuleData = {
+                counterparty: form.feeCounterparty.value,
+                product: form.feeProduct.value,
+                rate: Number(form.feeRate.value),
+                basis: form.feeBasis.value
+            };
+
+            try {
+                await addDoc(feeRulesCollectionRef, feeRuleData);
+                showToast('Fee rule added successfully!', 'success');
+                form.reset();
+            } catch (error) {
+                console.error("Error adding fee rule: ", error);
+                showToast('Failed to add fee rule.', 'error');
+            }
+        }
+
+        /**
+         * Handles deleting a fee rule.
+         * @param {Event} e - The click event.
+         */
+        async function handleDeleteFeeRule(e) {
+            if (e.target.classList.contains('delete-fee-btn')) {
+                const ruleId = e.target.dataset.id;
+                if (confirm('Are you sure you want to delete this fee rule?')) {
+                     try {
+                        await deleteDoc(doc(feeRulesCollectionRef, ruleId));
+                        showToast('Fee rule deleted.', 'info');
+                    } catch (error) {
+                        console.error("Error deleting fee rule: ", error);
+                        showToast('Failed to delete rule.', 'error');
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Calculates estimated costs for all trades based on current fee rules.
+         */
+        async function handleRecalculateCost() {
+            const calculationStatus = document.getElementById('calculation-status');
+            calculationStatus.textContent = "Calculating...";
+            costEstimationTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-8">Calculating...</td></tr>`;
+
+            try {
+                const tradeSnapshot = await getDocs(tradesCollectionRef);
+                const trades = tradeSnapshot.docs.map(doc => doc.data());
+
+                const estimations = trades.map(trade => {
+                    // Find the most specific rule that applies to this trade
+                    const rule = currentFeeRules.find(r => r.counterparty === trade.counterparty && r.product === trade.productType);
+                    
+                    let cost = 0;
+                    let rateText = "N/A";
+                    let basisText = "N/A";
+
+                    if (rule) {
+                        rateText = `${rule.rate}${rule.basis === 'notional_percent' ? '%' : '$'}`;
+                        basisText = rule.basis.replace('_', ' ');
+                        if (rule.basis === 'notional_percent') {
+                            cost = trade.volumeNotional * (rule.rate / 100);
+                        } else if (rule.basis === 'per_trade_fixed') {
+                            cost = rule.rate;
+                        }
+                    }
+                    
+                    return {
+                        tradeId: trade.tradeId,
+                        volume: trade.volumeNotional.toLocaleString(),
+                        rate: rateText,
+                        basis: basisText,
+                        cost: cost > 0 ? `$${cost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'N/A'
+                    };
+                });
+                
+                // Render results
+                costEstimationTableBody.innerHTML = '';
+                estimations.forEach(est => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${est.tradeId}</td><td>${est.volume}</td><td>${est.rate}</td><td>${est.basis}</td><td>${est.cost}</td>`;
+                    costEstimationTableBody.appendChild(tr);
+                });
+                calculationStatus.textContent = `Calculation complete for ${estimations.length} trades.`;
+
+            } catch(error) {
+                console.error("Error recalculating cost: ", error);
+                showToast("Failed to calculate costs.", "error");
+                calculationStatus.textContent = "Calculation failed.";
+            }
+        }
+
+
+        // --- EVENT LISTENERS ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase(); // Start the app
+            
+            // Navigation
+            const navItems = document.querySelectorAll('.nav-item');
+            const sections = document.querySelectorAll('.section');
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const sectionId = item.dataset.section;
+                    sections.forEach(s => s.classList.toggle('active', s.id === sectionId));
+                    navItems.forEach(n => n.classList.toggle('active', n.dataset.section === sectionId));
+                });
+            });
+
+            // Form Submissions
+            document.getElementById('trade-upload-form').addEventListener('submit', handleTradeUpload);
+            document.getElementById('trade-search-form').addEventListener('submit', handleTradeSearch);
+            document.getElementById('fee-rule-form').addEventListener('submit', handleAddFeeRule);
+            
+            // Reset Search
+            document.getElementById('reset-search-btn').addEventListener('click', () => {
+                 document.getElementById('trade-search-form').reset();
+                 listenForTrades(); // Fetch all trades again
+            });
+
+            // Button Clicks
+            document.getElementById('recalculate-cost-btn').addEventListener('click', handleRecalculateCost);
+            feeRulesTableBody.addEventListener('click', handleDeleteFeeRule);
+        });
+
+    </script>
+</body>
+</html>
